@@ -72,3 +72,6 @@ After you created the inventory file and filled in the IP addresses, you can run
 ```bash
 ansible-playbook playbooks/setup.yml
 ```
+
+> [!CAUTION]
+> Due to a known bug with Python on MacOS, you need to run `export NO_PROXY="*"` on MacOS before running the playbook
