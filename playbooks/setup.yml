@@ -1,0 +1,87 @@
+- name: Setup the lab controller
+  hosts: eda_controller
+  tags: [eda]
+  roles:
+    - role: eda
+
+- name: Install Prometheus
+  hosts: eda_controller
+  tags: [prometheus]
+  vars:
+    prometheus_alertmanager_config:
+      - static_configs:
+          - targets:
+              - localhost:9093
+    prometheus_alert_rules:
+      - alert: MySQL not running
+        expr: 'systemd_unit_state{type="service",name="mariadb.service",state="active"}!=1'
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          description: MariaDB is not running!
+      - alert: Watchdog
+        expr: vector(1)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          description: |
+            This is an alert meant to ensure that the entire alerting pipeline is functional.
+            This alert is always firing, therefore it should always be firing in Alertmanager
+            and always fire against a receiver. There are integrations with various notification
+            mechanisms that send a notification when this alert is not firing. For example the
+            "DeadMansSnitch" integration in PagerDuty.
+          summary: Ensure entire alerting pipeline is functional
+    prometheus_scrape_configs:
+      - job_name: prometheus
+        metrics_path: "{{ prometheus_metrics_path }}"
+        static_configs:
+          - targets:
+              - "{{ ansible_fqdn | default(ansible_host) | default('localhost') }}:9090"
+      - job_name: node
+        file_sd_configs:
+          - files:
+              - "{{ prometheus_config_dir }}/file_sd/node.yml"
+      - job_name: systemd
+        static_configs:
+          - targets:
+              - localhost:9558
+  roles:
+    - role: prometheus.prometheus.prometheus
+    - role: prometheus.prometheus.systemd_exporter
+
+- name: Install Alertmanager
+  hosts: eda_controller
+  vars:
+    alertmanager_route:
+      receiver: webhook-receiver
+      group_wait: 30s
+      group_interval: 5m
+      matchers: []
+      routes:
+        - receiver: alertmanager-receiver
+          matchers:
+            - severity = critical
+          group_wait: 30s
+          group_interval: 5m
+    alertmanager_receivers:
+      - name: webhook-receiver
+        webhook_configs:
+          - url: http://127.0.0.1:5000
+      - name: alertmanager-receiver
+        webhook_configs:
+          - url: http://127.0.0.1:9000/alertmanager
+  tags: [alertmanager]
+  roles:
+    - role: prometheus.prometheus.alertmanager
+
+- name: Install MySQL
+  hosts: eda_controller
+  tags: [db]
+  vars:
+    mysql_databases:
+      - name: eda
+        replicate: 0
+  roles:
+    - role: geerlingguy.mysql

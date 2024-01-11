@@ -1,0 +1,31 @@
+---
+- name: Listen to webhook events
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Debug event output
+      condition: 1 == 1
+      action:
+        debug:
+          msg: "{{ event }}"
+
+
+- name: Listen to Alertmanager alerts
+  hosts: all
+  sources:
+    - ansible.eda.alertmanager:
+        host: 0.0.0.0
+        port: 9000
+        data_alerts_path: alerts
+        data_host_path: labels.instance
+        data_path_separator: .
+
+  rules:
+    - name: Debug event output
+      condition: 1 == 1
+      action:
+        debug:
+          msg: "{{ event }}"

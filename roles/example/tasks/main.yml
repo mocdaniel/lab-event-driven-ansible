@@ -1,0 +1,14 @@
+---
+- name: Get time and date on host
+  ansible.builtin.command: date
+  register: hosttime
+  changed_when: false
+
+- name: Get hostname
+  ansible.builtin.command: hostname
+  register: hostname
+  changed_when: false
+
+- name: Echo time and hostname on host
+  ansible.builtin.debug:
+    msg: "It is {{ hosttime.stdout }} on {{ hostname.stdout }}"

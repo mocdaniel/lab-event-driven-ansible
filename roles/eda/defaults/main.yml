@@ -1,0 +1,4 @@
+---
+eda_install_alertmanager: true
+eda_install_eda: true
+eda_install_prometheus: true

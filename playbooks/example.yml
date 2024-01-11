@@ -1,0 +1,16 @@
+---
+- name: Example role
+  hosts: webservers
+  gather_facts: false
+  vars:
+    greeting: "Hello World!"
+  pre_tasks:
+    - name: Say Hello
+      ansible.builtin.debug:
+        msg: "{{ greeting }}"
+  roles:
+    - role: example
+  post_tasks:
+    - name: Say goodbye
+      ansible.builtin.debug:
+        msg: Goodbye!

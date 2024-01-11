@@ -1,0 +1,79 @@
+---
+- name: Ensure edacontroller group exists
+  ansible.builtin.group:
+    name: edacontroller
+    state: present
+    system: true
+
+- name: Ensure edacontroller user exists
+  ansible.builtin.user:
+    name: edacontroller
+    state: present
+    shell: /bin/bash
+    createhome: true
+    home: /var/lib/edacontroller
+    system: true
+    groups: edacontroller
+
+- name: Ensure edacontroller config directory exists
+  ansible.builtin.file:
+    path: /etc/edacontroller
+    state: directory
+    owner: edacontroller
+    group: edacontroller
+    mode: '0755'
+
+- name: Ensure configuration files are present
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/edacontroller/
+    owner: edacontroller
+    group: edacontroller
+    mode: '0644'
+  with_items:
+    - rulebook.yml
+    - inventory
+  notify: Restart edacontroller service
+
+- name: Ensure edacontroller service is present
+  ansible.builtin.copy:
+    src: edacontroller.service
+    dest: /etc/systemd/system/edacontroller.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install packages
+  become: true
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ eda_packages }}"
+
+- name: Install PIP modules
+  become_user: edacontroller
+  become: true
+  ansible.builtin.pip:
+    name: "{{ item }}"
+    state: present
+  environment:
+    JAVA_HOME: "{{ eda_env_java_home }}"
+  with_items:
+    - ansible-rulebook
+    - ansible
+    - ansible-runner
+
+- name: Install ansible.eda collection from Galaxy
+  become_user: edacontroller
+  become: true
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: ansible.eda
+  environment:
+    PATH: "/usr/local/bin:$PATH"
+
+- name: Ensure service is enabled and running
+  ansible.builtin.service:
+    name: edacontroller
+    state: started
+    enabled: true

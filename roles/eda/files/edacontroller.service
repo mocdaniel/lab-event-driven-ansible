@@ -1,0 +1,16 @@
+[Unit]
+Description=EDA Controller
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=edacontroller
+Group=edacontroller
+Type=simple
+WorkingDirectory=/etc/edacontroller
+ExecStart=/usr/local/bin/ansible-rulebook \
+--rulebook rulebook.yml \
+-i inventory --verbose
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+---
+roles:
+  - name: geerlingguy.mysql
+    version: 4.3.3
+
+collections:
+  - name: prometheus.prometheus
+    version: 0.8.1

@@ -1,0 +1,6 @@
+---
+eda_env_java_home: /usr/lib/jvm/jre-17-openjdk
+eda_packages:
+  - python3
+  - python3-pip
+  - java-17-openjdk

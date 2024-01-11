@@ -1,0 +1,5 @@
+---
+- name: Restart edacontroller service
+  ansible.builtin.service:
+    name: edacontroller
+    state: restarted
