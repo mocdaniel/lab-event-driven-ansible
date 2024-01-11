@@ -25,8 +25,8 @@ To follow along with this lab in its entirety, you will need four VMs:
 ### Clone the repository and create a Python virtual environment
 
 ```bash
-git clone https://github.com/mocdaniel/event-driven-ansible-lab.git
-cd event-driven-ansible-lab
+git clone https://github.com/mocdaniel/lab-event-driven-ansible.git
+cd lab-event-driven-ansible
 python3 -m venv .venv
 source .venv/bin/activate
 ```
