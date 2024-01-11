@@ -21,7 +21,6 @@
         data_alerts_path: alerts
         data_host_path: labels.instance
         data_path_separator: .
-
   rules:
     - name: Restart MySQL server
       condition: event.alert.labels.alertname == 'MySQL not running' and event.alert.status == 'firing'

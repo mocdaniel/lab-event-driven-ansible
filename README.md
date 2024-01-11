@@ -284,11 +284,8 @@ For this demo, the second **ruleset** in our rulebook is the one we're intereste
     - name: Restart MySQL server
       condition: event.alert.labels.alertname == 'MySQL not running' and event.alert.status == 'firing'
       action:
-        run_module:
-          name: ansible.builtin.service
-          module_args:
-            name: mysql
-            state: restarted
+        run_playbook:
+          playbook: ./playbook.yml
     - name: Debug event output
       condition: 1 == 1
       action:
@@ -296,4 +293,27 @@ For this demo, the second **ruleset** in our rulebook is the one we're intereste
           msg: "{{ event }}"
 ```
 
+With this rule, we can restart our MySQL server if it's not running! But how do we get the event to trigger? With **Prometheus** and **Alertmanager**!
+
+When you ran the setup playbook, it installed **Prometheus** and **Alertmanager** on the `eda-controller.example.com` VM. You can access the **Prometheus** UI at `http://<eda-controller-ip>:9090` and the **Alertmanager** UI at `http://<eda-controller-ip>:9093`.
+
+It also installed a **Prometheus exporter** for the **MySQL** database that runs on the server.
+
+With this setup, we can now shut down our MySQL server and see what happens - make sure to watch the output of the EDA controller's logs:
+
+```console
+systemctl stop mysql
+journalctl -fu edacontroller
+```
+
+
+Within 30-90 seconds, you should see EDA running our **playbook** and restarting the MySQL server. You can track that process by watching the Prometheus/Alertmanager UIs for firing alerts.
+
+Once you see the playbook being executed in the logs, you can check the MySQL state once more:
+
+```console
+systemctl status mysql
+```
+
+MySQL should be up and running again!
 </details>
