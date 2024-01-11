@@ -15,6 +15,12 @@
     system: true
     groups: edacontroller
 
+- name: Ensure edacontroller has passwordless sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    line: 'edacontroller ALL=(root) NOPASSWD:ALL'
+    validate: 'visudo -cf %s'
+
 - name: Ensure edacontroller config directory exists
   ansible.builtin.file:
     path: /etc/edacontroller
@@ -33,6 +39,7 @@
   with_items:
     - rulebook.yml
     - inventory
+    - playbook.yml
   notify: Restart edacontroller service
 
 - name: Ensure edacontroller service is present

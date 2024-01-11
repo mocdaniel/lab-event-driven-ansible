@@ -10,7 +10,7 @@ Type=simple
 WorkingDirectory=/etc/edacontroller
 ExecStart=/usr/local/bin/ansible-rulebook \
 --rulebook rulebook.yml \
--i inventory --verbose
+-i inventory
 
 [Install]
 WantedBy=multi-user.target

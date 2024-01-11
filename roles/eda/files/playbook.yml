@@ -1,0 +1,11 @@
+---
+- name: Restart MySQL
+  hosts: all
+  connection: local
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Restart MySQL
+      ansible.builtin.service:
+        name: mysql
+        state: started

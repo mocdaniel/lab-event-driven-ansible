@@ -12,7 +12,6 @@
         debug:
           msg: "{{ event }}"
 
-
 - name: Listen to Alertmanager alerts
   hosts: all
   sources:
@@ -24,6 +23,11 @@
         data_path_separator: .
 
   rules:
+    - name: Restart MySQL server
+      condition: event.alert.labels.alertname == 'MySQL not running' and event.alert.status == 'firing'
+      action:
+        run_playbook:
+          name: ./playbook.yml
     - name: Debug event output
       condition: 1 == 1
       action:

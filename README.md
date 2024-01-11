@@ -106,7 +106,7 @@ ansible \
 
 Go on and check if the web servers are running on the respective hosts.
 
-> [!TIP]
+> [!HINT]
 > Ansible is **idempotent** - try running the commands again and see how the output differs.
 
 </details>
@@ -141,6 +141,159 @@ The second example utilizes the following **playbook** to **gather** and **displ
 ```console
 ansible-playbook \
     playbooks/example.yml
+```
+
+</details>
+
+### Lab 2: Event-Driven Ansible
+
+<details>
+
+<summary>Receive Generic Events via Webhook</summary>
+
+#### Receive Generic Events via Webhook
+
+If you followed the setup instructions for the EDA lab, you should already have a running EDA instance on the `eda-controller.example.com` VM.
+
+If you navigate to `/etc/edacontroller/rulebook.yml` on the VM, you'll see the following rulebook:
+
+```yaml
+---
+- name: Listen to webhook events
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Debug event output
+      condition: 1 == 1
+      action:
+        debug:
+          msg: "{{ event }}"
+
+- name: Listen to Alertmanager alerts
+  hosts: all
+  sources:
+    - ansible.eda.alertmanager:
+        host: 0.0.0.0
+        port: 9000
+        data_alerts_path: alerts
+        data_host_path: labels.instance
+        data_path_separator: .
+  rules:
+    - name: Restart MySQL server
+      condition: event.alert.labels.alertname == 'MySQL not running' and event.alert.status == 'firing'
+      action:
+        run_module:
+          name: ansible.builtin.service
+          module_args:
+            name: mysql
+            state: restarted
+    - name: Debug event output
+      condition: 1 == 1
+      action:
+        debug:
+          msg: "{{ event }}"
+
+```
+
+For this part of the lab, the **first rule** is the one we're interested in: It listens to a generic webhook on port `5000` and prints the event's **metadata** to its logs.
+
+To test this, we can use the `curl` command to send a `POST` request to the webhook `/endpoint` from the VM itself:
+
+```console
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"foo": "bar"}' \
+  http://localhost:5000/endpoint
+```
+
+If you now check the logs of the EDA controller, you should see the following output:
+
+```console
+journalctl -fu eda-controller
+
+Jan 11 16:35:29 eda-controller ansible-rulebook[56882]: {'payload': {'foo': 'bar'}, 'meta': {'endpoint': 'endpoint',
+'headers': {'Host': 'localhost:5000', 'User-Agent': 'curl/7.76.1', 'Accept': '*/*', 'Content-Length': '21',
+'Content-Type': 'application/x-www-form-urlencoded'}, 'source': {'name': 'ansible.eda.webhook', 'type': 'ansible.eda.webhook'},
+'received_at': '2024-01-11T15:35:29.798401Z', 'uuid': '6ebf8dd2-60a2-455a-9383-97b81f535366'}}
+```
+
+A rule that always evaluates to `true` is not very useful, so let's change the rule to only print the the value of `foo` if the `foo` key is present in the event's payload, and `no foo :(` otherwise:
+
+```yaml
+---
+- name: Listen to webhook events
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Foo
+      condition: event.payload.foo is defined
+      action:
+        debug:
+          msg: "{{ event.payload.foo }}"
+    - name: No foo
+      condition: 1 == 1
+      action:
+        debug:
+          msg: "no foo :("
+```
+
+Send the same `curl` request again and check the logs, you should see a line saying `bar` now.
+
+Let's also try a `curl` request with a different payload:
+
+```console
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"bar": "baz"}' \
+  http://localhost:5000/endpoint
+```
+
+This time, the output should be `no foo :(`.
+
+</details>
+
+<details>
+
+<summary>Restarting Services Automatically with EDA</summary>
+
+#### Restarting Services Automatically with EDA
+
+The last lab is more of a demo - it shows how you can use EDA to automatically react on events observed by **Prometheus** and **Alertmanager**.
+
+For this demo, the second **ruleset** in our rulebook is the one we're interested in:
+
+```yaml
+- name: Listen to Alertmanager alerts
+  hosts: all
+  sources:
+    - ansible.eda.alertmanager:
+        host: 0.0.0.0
+        port: 9000
+        data_alerts_path: alerts
+        data_host_path: labels.instance
+        data_path_separator: .
+  rules:
+    - name: Restart MySQL server
+      condition: event.alert.labels.alertname == 'MySQL not running' and event.alert.status == 'firing'
+      action:
+        run_module:
+          name: ansible.builtin.service
+          module_args:
+            name: mysql
+            state: restarted
+    - name: Debug event output
+      condition: 1 == 1
+      action:
+        debug:
+          msg: "{{ event }}"
 ```
 
 </details>
