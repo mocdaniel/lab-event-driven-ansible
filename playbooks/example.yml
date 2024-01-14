@@ -1,5 +1,5 @@
 ---
-- name: Example role
+- name: Example role execution
   hosts: webservers
   gather_facts: false
   vars:
@@ -13,4 +13,4 @@
   post_tasks:
     - name: Say goodbye
       ansible.builtin.debug:
-        msg: Goodbye!
+        msg: "Goodbye!" 

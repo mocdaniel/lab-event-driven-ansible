@@ -58,7 +58,6 @@
   with_items: "{{ eda_packages }}"
 
 - name: Install PIP modules
-  become_user: edacontroller
   become: true
   ansible.builtin.pip:
     name: "{{ item }}"
