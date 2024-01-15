@@ -285,7 +285,7 @@ For this demo, the second **ruleset** in our rulebook is the one we're intereste
       condition: event.alert.labels.alertname == 'MySQL not running' and event.alert.status == 'firing'
       action:
         run_playbook:
-          playbook: ./playbook.yml
+          name: ./playbook.yml
     - name: Debug event output
       condition: 1 == 1
       action:
